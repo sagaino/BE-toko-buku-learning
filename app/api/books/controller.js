@@ -176,4 +176,34 @@ module.exports = {
       next(err);
     }
   },
+  deleteBook: async(req, res, next) => {
+    try {
+      const id = req.query.id;
+      const user = req.user.id;
+
+      const checkIdBook = await Book.findOne({
+        where: {
+          id,
+          user
+        },
+      });
+
+      if(!checkIdBook){
+        return res.status(404).json({
+          message: "id buku tidak di temukan",
+        });
+      }
+
+      await checkIdBook.destroy();
+
+      return res.status(200).json({
+        message: "berhasil hapus buku",
+        data: checkIdBook
+      });
+
+    } catch (err) {
+      console.log(err.message);
+      next(err.message);
+    }
+  },
 };
