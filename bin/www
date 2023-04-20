@@ -8,6 +8,7 @@ var app = require('../app');
 var debug = require('debug')('server-toko-buku:server');
 var http = require('http');
 const db = require('../app/db/models/index');
+require('dotenv').config();
 /**
  * Get port from environment and store in Express.
  */
@@ -26,7 +27,7 @@ var server = http.createServer(app);
  */
 db.sequelize.authenticate().then(result => {
   console.log("Database connected");
-  
+
   app.use((err, req, res, next) => {
     if (err.message == "Unsupported file format") {
       return res.status(404).json({

@@ -1,5 +1,7 @@
 const { Book, Category } = require('../../db/models');
 const { Op } = require('sequelize');
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
   getAllBook: async (req, res, next) => {
@@ -74,7 +76,7 @@ module.exports = {
           message: "Id category tidak di temukan",
         });
       }
-      const image = `/upload/${req.file.filename}`;
+      const image = `/uploads/${req.file.filename}`;
 
       const books = await Book.create({
         title, user, price, category, author, published, stock, image,
@@ -87,6 +89,91 @@ module.exports = {
     } catch (err) {
       console.log("err : ", err.message);
       next(err.message);
+    }
+  },
+
+  updateBook: async (req, res, next) => {
+    try {
+      if (!req.file) {
+        const user = req.user.id;
+        const id = req.query.id;
+        const { title, price, category, author, published, stock } = req.body;
+
+        const checkBook = await Book.findOne({
+          where: {
+            id: id,
+            user
+          },
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        })
+
+        if (!checkBook) {
+          return res.status(404).json({
+            message: "id buku tidak di temukan",
+          });
+        }
+
+        const book = await checkBook.update({
+          title, user, price, category, author, published, stock,
+        });
+
+        return res.status(200).json({
+          message: "berhasil update buku",
+          data: book,
+        });
+
+      } else {
+        const user = req.user.id;
+        const id = req.query.id;
+        const { title, price, category, author, published, stock } = req.body;
+
+        const checkBook = await Book.findOne({
+          where: {
+            id: id,
+            user
+          },
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        })
+
+        if (!checkBook) {
+          return res.status(404).json({
+            message: "id buku tidak di temukan",
+          });
+        }
+        try {
+          fs.unlinkSync(path.join(`public/${checkBook.image}`));
+
+          const image = `/uploads/${req.file.filename}`;
+
+          await checkBook.update({
+            title, user, price, category, author, published, stock, image,
+          });
+
+          const book = await checkBook.reload({
+            include: {
+              model: Category,
+              attributes: ["id", "name"],
+            },
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          });
+
+          return res.status(200).json({
+            message: "berhasil update buku",
+            data: book,
+          });
+        } catch (err) {
+          // Handle errors during image deletion or book update
+          console.log(err);
+          fs.unlinkSync(path.join(`public/uploads/${req.file.filename}`));
+          return res.status(500).json({
+            message: "Gagal menghapus gambar lama atau memperbarui buku",
+            status: "gagal"
+          });
+        }
+      }
+    } catch (err) {
+      console.log(err);
+      next(err);
     }
   },
 };
