@@ -6,7 +6,7 @@ const path = require("path");
 module.exports = {
   getAllBook: async (req, res, next) => {
     try {
-      const { keyword = "" } = req.query;
+      const { keyword = "", category = "" } = req.query;
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
 
@@ -20,6 +20,12 @@ module.exports = {
           title: {
             [Op.iLike]: `%${keyword}%`,
           },
+        };
+      }
+      if(category !== ""){
+        condition = {
+          ...condition,
+          category: category,
         };
       }
 
